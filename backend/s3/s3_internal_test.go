@@ -504,4 +504,40 @@ func (f *Fs) InternalTest(t *testing.T) {
 	t.Run("Versions", f.InternalTestVersions)
 }
 
+// TestS3UseAccelerateEndpoint tests that the use_accelerate_endpoint option
+// properly configures the S3 client to use Transfer Acceleration
+func TestS3UseAccelerateEndpoint(t *testing.T) {
+	ctx := context.Background()
+
+	// Test with UseAccelerateEndpoint = false (default)
+	t.Run("Disabled", func(t *testing.T) {
+		opt := &Options{
+			UseAccelerateEndpoint: false,
+			Region:                "us-east-1",
+		}
+		client, _, err := s3Connection(ctx, opt, fstest.NewHTTPClient(ctx))
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		// Get the options from the client
+		clientOpts := client.Options()
+		assert.False(t, clientOpts.UseAccelerate, "UseAccelerate should be false when use_accelerate_endpoint is false")
+	})
+
+	// Test with UseAccelerateEndpoint = true
+	t.Run("Enabled", func(t *testing.T) {
+		opt := &Options{
+			UseAccelerateEndpoint: true,
+			Region:                "us-east-1",
+		}
+		client, _, err := s3Connection(ctx, opt, fstest.NewHTTPClient(ctx))
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		// Get the options from the client
+		clientOpts := client.Options()
+		assert.True(t, clientOpts.UseAccelerate, "UseAccelerate should be true when use_accelerate_endpoint is true")
+	})
+}
+
 var _ fstests.InternalTester = (*Fs)(nil)
